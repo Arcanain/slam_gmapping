@@ -181,9 +181,11 @@ void SlamGMapping::init()
 
   got_first_scan_ = false;
   got_map_ = false;
-  
 
-  
+  diff_map_to_odom_ = GMapping::OrientedPoint(0.0,
+                                              0.0,
+                                              0.0);
+
   // Parameters used by our GMapping wrapper
   if(!private_nh_.getParam("throttle_scans", throttle_scans_))
     throttle_scans_ = 1;
@@ -552,7 +554,13 @@ SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoin
 {
   if(!getOdomPose(gmap_pose, scan.header.stamp))
      return false;
-  
+
+  // for gps odom:  fuse gmap_pose to reduce diff between mpose and odom_pose
+  GMapping::OrientedPoint mpose = gsp_->getParticles()[gsp_->getBestParticleIndex()].pose;
+  gmap_pose.x += diff_map_to_odom_.x;
+  gmap_pose.y += diff_map_to_odom_.y;
+  gmap_pose.theta += diff_map_to_odom_.theta;
+
   if(scan.ranges.size() != gsp_laser_beam_count_)
     return false;
 
@@ -633,6 +641,10 @@ SlamGMapping::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     ROS_DEBUG("new best pose: %.3f %.3f %.3f", mpose.x, mpose.y, mpose.theta);
     ROS_DEBUG("odom pose: %.3f %.3f %.3f", odom_pose.x, odom_pose.y, odom_pose.theta);
     ROS_DEBUG("correction: %.3f %.3f %.3f", mpose.x - odom_pose.x, mpose.y - odom_pose.y, mpose.theta - odom_pose.theta);
+
+    diff_map_to_odom_ = GMapping::OrientedPoint(mpose.x - odom_pose.x,
+                                                mpose.y - odom_pose.y,
+                                                mpose.theta - odom_pose.theta);
 
     tf::Transform laser_to_map = tf::Transform(tf::createQuaternionFromRPY(0, 0, mpose.theta), tf::Vector3(mpose.x, mpose.y, 0.0)).inverse();
     tf::Transform odom_to_laser = tf::Transform(tf::createQuaternionFromRPY(0, 0, odom_pose.theta), tf::Vector3(odom_pose.x, odom_pose.y, 0.0));
