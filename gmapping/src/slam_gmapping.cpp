@@ -556,7 +556,6 @@ SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoin
      return false;
 
   // for gps odom:  fuse gmap_pose to reduce diff between mpose and odom_pose
-  GMapping::OrientedPoint mpose = gsp_->getParticles()[gsp_->getBestParticleIndex()].pose;
   gmap_pose.x += diff_map_to_odom_.x;
   gmap_pose.y += diff_map_to_odom_.y;
   gmap_pose.theta += diff_map_to_odom_.theta;
