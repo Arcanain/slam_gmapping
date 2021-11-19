@@ -102,6 +102,8 @@ class SlamGMapping
 
     // for gps odom
     GMapping::OrientedPoint diff_map_to_odom_;
+    double fuse_gps_gain_xy;
+    double fuse_gps_gain_yaw;
 
     std::string base_frame_;
     std::string laser_frame_;

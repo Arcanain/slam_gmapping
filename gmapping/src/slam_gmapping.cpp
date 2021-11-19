@@ -265,6 +265,15 @@ void SlamGMapping::init()
   if(!private_nh_.getParam("tf_delay", tf_delay_))
     tf_delay_ = transform_publish_period_;
 
+  if(!private_nh_.getParam("fuse_gps_gain_xy", fuse_gps_gain_xy)) {
+    fuse_gps_gain_xy = 0.5;
+    ROS_ERROR("gmapping: fuse_gps_gain_xy param not set");
+  }
+  if(!private_nh_.getParam("fuse_gps_gain_yaw", fuse_gps_gain_yaw)) {
+    fuse_gps_gain_yaw = 0.5;
+    ROS_ERROR("gmapping: fuse_gps_gain_yaw param not set");
+  }
+
 }
 
 
@@ -556,9 +565,9 @@ SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoin
      return false;
 
   // for gps odom:  fuse gmap_pose to reduce diff between mpose and odom_pose
-  gmap_pose.x += diff_map_to_odom_.x;
-  gmap_pose.y += diff_map_to_odom_.y;
-  gmap_pose.theta += diff_map_to_odom_.theta;
+  gmap_pose.x += diff_map_to_odom_.x * fuse_gps_gain_xy;
+  gmap_pose.y += diff_map_to_odom_.y * fuse_gps_gain_xy;
+  gmap_pose.theta += diff_map_to_odom_.theta * fuse_gps_gain_yaw;
 
   if(scan.ranges.size() != gsp_laser_beam_count_)
     return false;
